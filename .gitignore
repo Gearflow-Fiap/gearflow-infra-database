@@ -1,0 +1,15 @@
+# Arquivos e diretórios locais do Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Valores locais e sensíveis
+*.tfvars
+*.tfvars.json
+
+# Editor e sistema operacional
+.vscode/
+.idea/
+.DS_Store
