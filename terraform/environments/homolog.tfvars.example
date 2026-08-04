@@ -1,0 +1,17 @@
+# Ambiente de homologação: valores econômicos e removíveis após os testes.
+environment                    = "homolog"
+aws_region                     = "sa-east-1"
+vpc_cidr                       = "10.40.0.0/16"
+db_instance_identifier         = "gearflow-sqlserver-homolog"
+db_instance_class              = "db.t3.micro"
+allocated_storage_gib          = 20
+max_allocated_storage_gib      = 100
+multi_az                       = false
+backup_retention_days          = 7
+deletion_protection            = false
+skip_final_snapshot            = true
+secret_recovery_window_in_days = 7
+
+# Mantenha vazias até existir uma aplicação autorizada a acessar o banco.
+allowed_cidr_blocks        = []
+allowed_security_group_ids = []
