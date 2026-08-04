@@ -26,7 +26,7 @@ flowchart TB
 - Terraform 1.15.8
 - HashiCorp AWS Provider 6.x
 - Terraform Cloud, organização `gearflowfiapmurilo`
-- Amazon VPC, Amazon RDS for SQL Server e AWS Secrets Manager
+- Amazon VPC, Amazon RDS for SQL Server, AWS Secrets Manager e CloudWatch Logs
 
 ## Estrutura
 

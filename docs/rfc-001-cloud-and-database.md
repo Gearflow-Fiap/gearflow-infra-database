@@ -10,6 +10,10 @@ gerenciado, Terraform, segurança e CI/CD, mas não exige troca de banco.
 Usar AWS como nuvem e Amazon RDS for SQL Server Express como banco gerenciado
 inicial de homologação.
 
+O AWS Academy Lab validou a combinação `sqlserver-ex`, SQL Server 2022
+`16.00.4255.1.v1`, classe `db.t3.micro`, licença incluída, armazenamento `gp3`
+e VPC na região `us-east-1`. Essa classe não oferece Multi-AZ.
+
 ## Motivos
 
 - Mantém compatibilidade com o código e migrations existentes do GearFlow.

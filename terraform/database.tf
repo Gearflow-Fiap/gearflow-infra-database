@@ -27,7 +27,9 @@ resource "aws_db_instance" "sqlserver" {
   auto_minor_version_upgrade = true
   apply_immediately          = false
 
-  enabled_cloudwatch_logs_exports = ["agent", "error"]
+  # O AWS Academy Lab informa que SQL Server Express exporta somente o log
+  # "error" para CloudWatch Logs. Manter apenas esse tipo evita falha no apply.
+  enabled_cloudwatch_logs_exports = ["error"]
 
   tags = {
     Name = "gearflow-sqlserver-${var.environment}"

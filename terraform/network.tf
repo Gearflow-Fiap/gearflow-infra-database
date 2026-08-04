@@ -1,11 +1,3 @@
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
-locals {
-  private_availability_zones = slice(data.aws_availability_zones.available.names, 0, 2)
-}
-
 # Esta VPC é privada e exclusiva do banco nesta primeira etapa. Ela não cria
 # Internet Gateway nem NAT Gateway, portanto não expõe o banco à internet.
 resource "aws_vpc" "database" {
@@ -19,11 +11,11 @@ resource "aws_vpc" "database" {
 }
 
 resource "aws_subnet" "database_private" {
-  count = length(local.private_availability_zones)
+  count = length(var.availability_zones)
 
   vpc_id                  = aws_vpc.database.id
   cidr_block              = cidrsubnet(var.vpc_cidr, 4, count.index)
-  availability_zone       = local.private_availability_zones[count.index]
+  availability_zone       = var.availability_zones[count.index]
   map_public_ip_on_launch = false
 
   tags = {

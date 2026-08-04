@@ -1,7 +1,8 @@
 variable "aws_region" {
   description = "Região AWS em que o ambiente será criado."
   type        = string
-  default     = "sa-east-1"
+  # A região do AWS Academy Lab validada neste projeto.
+  default     = "us-east-1"
 }
 
 variable "environment" {
@@ -18,6 +19,17 @@ variable "vpc_cidr" {
   validation {
     condition     = can(cidrnetmask(var.vpc_cidr))
     error_message = "vpc_cidr deve conter uma faixa IPv4 CIDR válida."
+  }
+}
+
+variable "availability_zones" {
+  description = "Duas zonas de disponibilidade que receberão as subnets privadas do RDS."
+  type        = list(string)
+  default     = ["us-east-1a", "us-east-1b"]
+
+  validation {
+    condition     = length(var.availability_zones) == 2 && length(distinct(var.availability_zones)) == 2
+    error_message = "Informe exatamente duas zonas de disponibilidade diferentes."
   }
 }
 

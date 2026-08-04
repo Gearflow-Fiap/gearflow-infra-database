@@ -22,6 +22,8 @@ integrar, nesta etapa, API, Kubernetes ou Lambda.
 - A porta TCP 1433 não terá regras de entrada por padrão.
 - Credenciais não são versionadas no Git.
 - O acesso futuro será adicionado somente por CIDR ou Security Group explícito.
+- As zonas são variáveis explícitas. Isso evita a permissão
+  `ec2:DescribeAvailabilityZones`, bloqueada pelo AWS Academy Lab.
 
 ## Contratos futuros
 

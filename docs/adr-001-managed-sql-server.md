@@ -19,3 +19,5 @@ o motor SQL Server e o banco lógico planejado `GearFlowDb`.
 - A aplicação futura usará endpoint privado e segredos, em vez de
   `sqlserver-service` dentro do Kubernetes.
 - O `GearFlowDb` será criado pelas migrations quando a aplicação for integrada.
+- Em homologação será usada a combinação validada no AWS Academy: SQL Server
+  2022 Express `16.00.4255.1.v1` em `db.t3.micro`, sem Multi-AZ.

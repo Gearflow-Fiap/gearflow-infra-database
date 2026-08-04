@@ -1,9 +1,11 @@
 # Ambiente de homologação: valores econômicos e removíveis após os testes.
 environment                    = "homolog"
-aws_region                     = "sa-east-1"
+aws_region                     = "us-east-1"
 vpc_cidr                       = "10.40.0.0/16"
+availability_zones             = ["us-east-1a", "us-east-1b"] # Confirmadas pelo AWS Academy Lab
 db_instance_identifier         = "gearflow-sqlserver-homolog"
 db_instance_class              = "db.t3.micro"
+sqlserver_engine_version       = "16.00.4255.1.v1" # SQL Server 2022 disponível no AWS Academy Lab
 allocated_storage_gib          = 20
 max_allocated_storage_gib      = 100
 multi_az                       = false
