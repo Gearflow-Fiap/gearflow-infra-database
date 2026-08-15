@@ -1,9 +1,16 @@
-# Esta VPC é privada e exclusiva do banco nesta primeira etapa. Ela não cria
-# Internet Gateway nem NAT Gateway, portanto não expõe o banco à internet.
+# VPC do banco agora tem IGW para permitir acesso público ao RDS (ambiente de lab)
 resource "aws_vpc" "database" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
+
+  tags = {
+    Name = "gearflow-database-${var.environment}"
+  }
+}
+
+resource "aws_internet_gateway" "database" {
+  vpc_id = aws_vpc.database.id
 
   tags = {
     Name = "gearflow-database-${var.environment}"
@@ -16,21 +23,24 @@ resource "aws_subnet" "database_private" {
   vpc_id                  = aws_vpc.database.id
   cidr_block              = cidrsubnet(var.vpc_cidr, 4, count.index)
   availability_zone       = var.availability_zones[count.index]
-  map_public_ip_on_launch = false
+  map_public_ip_on_launch = true
 
   tags = {
-    Name = "gearflow-database-${var.environment}-private-${count.index + 1}"
+    Name = "gearflow-database-${var.environment}-public-${count.index + 1}"
     Tier = "database"
   }
 }
 
-# A tabela de rotas não possui rota para a internet. Ela existe para tornar a
-# topologia explícita e permitir sua evolução futura sem alterar as subnets.
 resource "aws_route_table" "database_private" {
   vpc_id = aws_vpc.database.id
 
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.database.id
+  }
+
   tags = {
-    Name = "gearflow-database-${var.environment}-private"
+    Name = "gearflow-database-${var.environment}-public"
   }
 }
 
