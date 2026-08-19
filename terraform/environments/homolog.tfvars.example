@@ -14,6 +14,6 @@ deletion_protection            = false
 skip_final_snapshot            = true
 secret_recovery_window_in_days = 7
 
-# Mantenha vazias até existir uma aplicação autorizada a acessar o banco.
-allowed_cidr_blocks        = []
+# Lab: libera acesso público na porta 1433 (não usar em produção)
+allowed_cidr_blocks        = ["0.0.0.0/0"]
 allowed_security_group_ids = []
