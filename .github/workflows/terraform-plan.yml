@@ -62,14 +62,29 @@ jobs:
       - name: Check database security in plan
         run: |
           terraform show -json tfplan > tfplan.json
-          jq -e '
-            [ .. | objects | select(.address? == "aws_db_instance.sqlserver") | .values ]
-            | length == 0 or all(.[]; .publicly_accessible == false and .storage_encrypted == true)
-          ' tfplan.json > /dev/null
-          jq -e '
-            [ .. | objects | select((.address? // "") | startswith("aws_vpc_security_group_ingress_rule.sqlserver_cidr")) | .values.cidr_ipv4 ]
-            | all(.[]; . != "0.0.0.0/0")
-          ' tfplan.json > /dev/null
+          DB_IS_SECURE=$(jq -r '
+            [ .resource_changes[]?
+              | select(.type == "aws_db_instance" and .name == "sqlserver")
+              | .change.after ]
+            | if length == 0 then true
+              else all(.[]; .publicly_accessible == false and .storage_encrypted == true)
+              end
+          ' tfplan.json)
+          if [ "$DB_IS_SECURE" != "true" ]; then
+            echo "::error::O plano tenta criar ou alterar o RDS sem criptografia ou com acesso público."
+            exit 1
+          fi
+
+          HAS_PUBLIC_SQL_RULE=$(jq -r '
+            [ .resource_changes[]?
+              | select(.type == "aws_vpc_security_group_ingress_rule" and .name == "sqlserver_cidr")
+              | .change.after.cidr_ipv4 ]
+            | any(.[]; . == "0.0.0.0/0")
+          ' tfplan.json)
+          if [ "$HAS_PUBLIC_SQL_RULE" = "true" ]; then
+            echo "::error::O plano tenta liberar SQL Server (1433) para 0.0.0.0/0."
+            exit 1
+          fi
 
       - name: Render plan for review
         if: always()
