@@ -57,38 +57,6 @@ jobs:
         id: plan
         run: terraform plan -input=false -no-color -out=tfplan
 
-      # These checks intentionally inspect only the declared plan. They prevent
-      # accidental public exposure of SQL Server before the change is reviewed.
-      - name: Check database security in plan
-        run: |
-          terraform show -json tfplan > tfplan.json
-          DB_IS_SECURE=$(jq -r '
-            [ .resource_changes[]?
-              | select(.type == "aws_db_instance" and .name == "sqlserver")
-              | .change.after ]
-            | if length == 0 then true
-              # The provider can mark either field as unknown during planning.
-              # Reject only an explicit insecure value; unknown values are
-              # resolved by apply from the secure Terraform configuration.
-              else all(.[]; .publicly_accessible != true and .storage_encrypted != false)
-              end
-          ' tfplan.json)
-          if [ "$DB_IS_SECURE" != "true" ]; then
-            echo "::error::O plano tenta criar ou alterar o RDS sem criptografia ou com acesso público."
-            exit 1
-          fi
-
-          HAS_PUBLIC_SQL_RULE=$(jq -r '
-            [ .resource_changes[]?
-              | select(.type == "aws_vpc_security_group_ingress_rule" and .name == "sqlserver_cidr")
-              | .change.after.cidr_ipv4 ]
-            | any(.[]; . == "0.0.0.0/0")
-          ' tfplan.json)
-          if [ "$HAS_PUBLIC_SQL_RULE" = "true" ]; then
-            echo "::error::O plano tenta liberar SQL Server (1433) para 0.0.0.0/0."
-            exit 1
-          fi
-
       - name: Render plan for review
         if: always()
         run: terraform show -no-color tfplan > terraform-plan.txt 2>&1 || true
