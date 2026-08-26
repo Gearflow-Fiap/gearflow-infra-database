@@ -1,0 +1,22 @@
+# Ambiente de produção: defina a classe da instância conforme a carga real.
+environment                    = "producao"
+aws_region                     = "us-east-1"
+vpc_cidr                       = "10.50.0.0/16"
+availability_zones             = ["us-east-1a", "us-east-1b"]
+db_instance_identifier         = "gearflow-sqlserver-producao"
+db_instance_class              = "db.t3.small"
+allocated_storage_gib          = 20
+max_allocated_storage_gib      = 100
+# O AWS Academy confirmou que SQL Server Express em db.t3.micro não suporta
+# Multi-AZ. Valide a combinação de engine e classe antes de habilitá-lo em uma
+# conta de produção; SQL Server Standard/Enterprise pode ser necessário.
+multi_az                       = false
+backup_retention_days          = 14
+deletion_protection            = true
+skip_final_snapshot            = false
+final_snapshot_identifier      = "gearflow-sqlserver-producao-final"
+secret_recovery_window_in_days = 30
+
+# Mantenha vazias até existir uma aplicação autorizada a acessar o banco.
+allowed_cidr_blocks        = []
+allowed_security_group_ids = []

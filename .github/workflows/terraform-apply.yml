@@ -1,0 +1,77 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-apply.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-homolog-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Apply database infrastructure
+    runs-on: ubuntu-latest
+    # Configure required reviewers for this environment in GitHub before the
+    # first apply. This repository provisions the homologation RDS instance.
+    environment: homolog
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    env:
+      TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.8
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Initialize Terraform
+        run: terraform init -input=false
+
+      - name: Validate Terraform configuration
+        run: terraform validate -no-color
+
+      - name: Create reviewed execution plan
+        run: terraform plan -input=false -no-color -out=tfplan
+
+      - name: Apply execution plan
+        run: terraform apply -input=false -no-color tfplan
+
+      - name: Verify RDS and publish deployment summary
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          DB_IDENTIFIER: gearflow-sqlserver-homolog
+        run: |
+          DB_STATUS=$(aws rds describe-db-instances --db-instance-identifier "$DB_IDENTIFIER" --query 'DBInstances[0].DBInstanceStatus' --output text)
+          PUBLIC=$(aws rds describe-db-instances --db-instance-identifier "$DB_IDENTIFIER" --query 'DBInstances[0].PubliclyAccessible' --output text)
+          [ "$DB_STATUS" = "available" ]
+          [ "$PUBLIC" = "False" ]
+          {
+            echo "## Deploy do banco concluído"
+            echo "- Instância: \`$DB_IDENTIFIER\`"
+            echo "- Status: \`$DB_STATUS\`"
+            echo "- Acesso público: \`$PUBLIC\`"
+            echo "- Região: \`${AWS_REGION}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
