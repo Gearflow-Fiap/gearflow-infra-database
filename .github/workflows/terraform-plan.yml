@@ -1,0 +1,98 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-plan.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: database-plan-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: Validate and plan database infrastructure
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    env:
+      TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive
+
+      - name: Initialize Terraform
+        run: terraform init -input=false
+
+      - name: Validate Terraform configuration
+        run: terraform validate -no-color
+
+      - name: Create execution plan
+        id: plan
+        run: terraform plan -input=false -no-color -out=tfplan
+
+      # These checks intentionally inspect only the declared plan. They prevent
+      # accidental public exposure of SQL Server before the change is reviewed.
+      - name: Check database security in plan
+        run: |
+          terraform show -json tfplan > tfplan.json
+          jq -e '
+            [ .. | objects | select(.address? == "aws_db_instance.sqlserver") | .values ]
+            | length == 0 or all(.[]; .publicly_accessible == false and .storage_encrypted == true)
+          ' tfplan.json > /dev/null
+          jq -e '
+            [ .. | objects | select((.address? // "") | startswith("aws_vpc_security_group_ingress_rule.sqlserver_cidr")) | .values.cidr_ipv4 ]
+            | all(.[]; . != "0.0.0.0/0")
+          ' tfplan.json > /dev/null
+
+      - name: Render plan for review
+        if: always()
+        run: terraform show -no-color tfplan > terraform-plan.txt 2>&1 || true
+
+      - name: Comment plan on pull request
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          PLAN_STATUS: ${{ steps.plan.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- gearflow-database-terraform-plan -->';
+            const plan = fs.existsSync('terraform/terraform-plan.txt')
+              ? fs.readFileSync('terraform/terraform-plan.txt', 'utf8')
+              : 'O plano não foi gerado. Consulte os logs do workflow.';
+            const body = `${marker}\n## Terraform Plan — infra-database\n\nStatus: **${process.env.PLAN_STATUS}**\n\n<details><summary>Ver plano</summary>\n\n\`\`\`terraform\n${plan.slice(0, 60000)}\n\`\`\`\n</details>`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const previous = comments.find(comment => comment.body.includes(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }

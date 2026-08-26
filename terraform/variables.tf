@@ -2,7 +2,7 @@ variable "aws_region" {
   description = "Região AWS em que o ambiente será criado."
   type        = string
   # A região do AWS Academy Lab validada neste projeto.
-  default     = "us-east-1"
+  default = "us-east-1"
 }
 
 variable "environment" {

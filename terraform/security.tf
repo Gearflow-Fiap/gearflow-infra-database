@@ -1,5 +1,5 @@
 resource "aws_security_group" "database" {
-  name        = "gearflow-database-${var.environment}"
+  name = "gearflow-database-${var.environment}"
   # A API EC2 aceita apenas caracteres ASCII neste campo.
   description = "Firewall for GearFlow SQL Server RDS"
   vpc_id      = aws_vpc.database.id
