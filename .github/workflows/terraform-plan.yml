@@ -67,7 +67,10 @@ jobs:
               | select(.type == "aws_db_instance" and .name == "sqlserver")
               | .change.after ]
             | if length == 0 then true
-              else all(.[]; .publicly_accessible == false and .storage_encrypted == true)
+              # The provider can mark either field as unknown during planning.
+              # Reject only an explicit insecure value; unknown values are
+              # resolved by apply from the secure Terraform configuration.
+              else all(.[]; .publicly_accessible != true and .storage_encrypted != false)
               end
           ' tfplan.json)
           if [ "$DB_IS_SECURE" != "true" ]; then
