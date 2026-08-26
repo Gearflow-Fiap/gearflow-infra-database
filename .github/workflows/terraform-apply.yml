@@ -54,7 +54,7 @@ jobs:
         run: terraform validate -no-color
 
       - name: Create reviewed execution plan
-        run: terraform plan -input=false -no-color -out=tfplan
+        run: terraform plan -input=false -no-color -var-file=environments/homolog.tfvars.example -out=tfplan
 
       - name: Apply execution plan
         run: terraform apply -input=false -no-color tfplan
