@@ -11,7 +11,7 @@ resource "aws_db_instance" "sqlserver" {
 
   db_subnet_group_name   = aws_db_subnet_group.database.name
   vpc_security_group_ids = [aws_security_group.database.id]
-  publicly_accessible    = false
+  publicly_accessible    = true
   multi_az               = var.multi_az
 
   allocated_storage     = var.allocated_storage_gib
