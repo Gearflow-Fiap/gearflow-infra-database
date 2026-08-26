@@ -55,7 +55,7 @@ jobs:
 
       - name: Create execution plan
         id: plan
-        run: terraform plan -input=false -no-color -out=tfplan
+        run: terraform plan -input=false -no-color -var-file=environments/homolog.tfvars.example -out=tfplan
 
       - name: Render plan for review
         if: always()
