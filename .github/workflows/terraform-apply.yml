@@ -29,6 +29,7 @@ jobs:
 
     env:
       TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+      TF_VAR_app_db_password: ${{ secrets.DB_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +47,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ vars.AWS_REGION }}
+
+      # Não vem mais pré-instalado no ubuntu-latest (24.04) — necessário pro
+      # local-exec de null_resource.app_database (cria o banco GearFlowDb).
+      - name: Install sqlcmd
+        run: |
+          curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc > /dev/null
+          curl -fsSL "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list" | sudo tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+          echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
 
       - name: Initialize Terraform
         run: terraform init -input=false
