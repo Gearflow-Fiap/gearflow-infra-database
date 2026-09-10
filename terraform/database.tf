@@ -1,10 +1,11 @@
 resource "aws_db_instance" "sqlserver" {
   identifier = var.db_instance_identifier
 
-  engine         = "sqlserver-ex"
-  engine_version = var.sqlserver_engine_version
-  license_model  = "license-included"
-  instance_class = var.db_instance_class
+  engine                      = "sqlserver-ex"
+  engine_version              = var.sqlserver_engine_version
+  allow_major_version_upgrade = true
+  license_model               = "license-included"
+  instance_class              = var.db_instance_class
 
   username                    = var.db_master_username
   manage_master_user_password = true
