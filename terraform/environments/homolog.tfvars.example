@@ -14,6 +14,9 @@ deletion_protection            = false
 skip_final_snapshot            = true
 secret_recovery_window_in_days = 7
 
-# Lab: libera acesso público na porta 1433 (não usar em produção)
-allowed_cidr_blocks        = ["0.0.0.0/0"]
+# RDS é privado (publicly_accessible = false): sem CIDRs liberados. Preencha
+# allowed_security_group_ids com o ID do security group da Lambda check-client
+# (output "check_client_lambda_security_group_id" em gearflow-lambda) depois do
+# apply daquele repositório.
+allowed_cidr_blocks        = []
 allowed_security_group_ids = []

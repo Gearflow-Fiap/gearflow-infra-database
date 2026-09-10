@@ -16,5 +16,13 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
+    mssql = {
+      source  = "betr-io/mssql"
+      version = "~> 0.2"
+    }
   }
 }

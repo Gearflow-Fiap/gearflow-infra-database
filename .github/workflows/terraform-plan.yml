@@ -26,6 +26,7 @@ jobs:
 
     env:
       TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+      TF_VAR_app_db_password: ${{ secrets.DB_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
