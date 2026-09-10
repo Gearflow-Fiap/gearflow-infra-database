@@ -50,6 +50,28 @@ jobs:
       - name: Initialize Terraform
         run: terraform init -input=false
 
+      - name: Inspect Terraform state
+        run: |
+          echo "=== Terraform files ==="
+          ls -la
+
+          echo "=== Terraform backend ==="
+          terraform version
+
+          echo "=== Terraform state list ==="
+          terraform state list || true
+
+          echo "=== Terraform state pull ==="
+          terraform state pull | head -c 1000 || true
+
+      - name: Show Terraform configuration
+        run: |
+          echo "=== .terraform ==="
+          find .terraform -maxdepth 3 -type f -print || true
+
+          echo "=== State files ==="
+          find .. -name "*.tfstate*" -print || true
+
       - name: Validate Terraform configuration
         run: terraform validate -no-color
 
