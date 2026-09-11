@@ -19,4 +19,6 @@ secret_recovery_window_in_days = 7
 # (output "check_client_lambda_security_group_id" em gearflow-lambda) depois do
 # apply daquele repositório.
 allowed_cidr_blocks        = []
+# Inclua os SGs do runner privado e da Lambda apos ambos existirem. Nao use
+# 0.0.0.0/0: estes IDs sao o unico caminho TCP/1433 autorizado ao RDS.
 allowed_security_group_ids = []

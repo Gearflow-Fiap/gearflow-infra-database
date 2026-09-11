@@ -133,4 +133,28 @@ variable "allowed_security_group_ids" {
   description = "Security groups que poderão acessar o SQL Server no futuro. Deve permanecer vazio nesta fase."
   type        = set(string)
   default     = []
+
+  validation {
+    condition     = alltrue([for security_group_id in var.allowed_security_group_ids : can(regex("^sg-[0-9a-f]+$", security_group_id))])
+    error_message = "allowed_security_group_ids deve conter apenas IDs de Security Group AWS válidos."
+  }
+}
+
+variable "runner_instance_type" {
+  description = "Classe da EC2 que executa o runner privado do GitHub Actions."
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "runner_repository_url" {
+  description = "URL HTTPS do repositorio GitHub no qual o runner sera registrado."
+  type        = string
+  default     = "https://github.com/Gearflow-Fiap/gearflow-infra-database"
+}
+
+variable "runner_registration_token" {
+  description = "Token temporario gerado pela API do GitHub para registrar o runner durante o bootstrap."
+  type        = string
+  sensitive   = true
+  default     = ""
 }

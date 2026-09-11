@@ -33,3 +33,12 @@ resource "aws_vpc_security_group_ingress_rule" "sqlserver_security_group" {
   ip_protocol                  = "tcp"
   description                  = "Acesso SQL Server autorizado futuramente"
 }
+
+resource "aws_vpc_security_group_ingress_rule" "sqlserver_database_provisioner" {
+  security_group_id            = aws_security_group.database.id
+  referenced_security_group_id = aws_security_group.database_provisioner.id
+  from_port                    = 1433
+  to_port                      = 1433
+  ip_protocol                  = "tcp"
+  description                  = "Private GitHub Actions database runner"
+}
