@@ -2,7 +2,7 @@
 
 Este repositório contém a infraestrutura como código do banco de dados gerenciado do GearFlow. Ele corresponde ao Repositório 3 da Fase 3 e usa Terraform para provisionar uma rede privada, Amazon RDS for SQL Server e AWS Secrets Manager.
 
-API, Kubernetes, Lambda, migrations e CI/CD não fazem parte deste repositório neste momento.
+O apply que cria objetos SQL é executado por um runner GitHub Actions privado na VPC. A Lambda `check-client` usa as mesmas subnets privadas, mas é provisionada no repositório `gearflow-lambda`.
 
 ## Status atual
 
@@ -43,6 +43,20 @@ flowchart TB
 - O acesso futuro será liberado apenas por CIDR ou Security Group autorizado.
 
 Por ser privado, o banco não aceita conexão direta do computador local. A conexão SQL será feita futuramente por uma aplicação autorizada no Kubernetes ou por um cliente temporário dentro da VPC.
+
+## Integração privada e sequência de deploy
+
+O workflow de apply exige o label `database-vpc`; ele não executa em runners GitHub hospedados. O próprio Terraform cria a EC2 privada, seu Security Group e instala o runner, AWS CLI e `sqlcmd` via `user_data`.
+
+1. Cada push para `main` executa primeiro o job **Ensure private database runner** em um runner GitHub hospedado. Ele gera um token de registro de curta duração e aplica somente a fundação, com `enable_sql_bootstrap=false`.
+2. Se a EC2 privada ainda não existir, o Terraform a cria e ela se registra automaticamente com o label `database-vpc`. Se já existir, o apply não altera o runner.
+3. Em seguida, o job de apply é enviado ao runner privado e habilita `enable_sql_bootstrap=true`, criando `GearFlowDb` e `gearflow_app` sem expor o RDS.
+
+O bootstrap não requer senha do banco nem conexão TCP/1433. O token do runner existe somente durante o job e não é armazenado no repositório. O runner está na mesma VPC do banco, sem IP público; sua regra de entrada no RDS é exclusivamente por Security Group em TCP/1433.
+
+Antes do primeiro bootstrap, cadastre o secret `GH_RUNNER_ADMIN_TOKEN`: um fine-grained PAT do GitHub com permissão **Administration: write** apenas para este repositório. A API de registro de runners exige essa permissão administrativa; o `GITHUB_TOKEN` do workflow não a substitui. Esse secret não muda com o AWS Academy.
+
+Para uma nova sessão do AWS Academy, atualize apenas os secrets temporários AWS do environment `homolog` e faça um push para `main` ou use **Run workflow**. Não é necessário registrar a EC2, criar Security Groups ou copiar IDs manualmente.
 
 ## Tecnologias
 
