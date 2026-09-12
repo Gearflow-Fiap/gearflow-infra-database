@@ -54,6 +54,8 @@ O workflow de apply exige o label `database-vpc`; ele não executa em runners Gi
 
 O bootstrap não requer senha do banco nem conexão TCP/1433, pois usa um apply direcionado ao runner. O token do runner existe somente durante o job e não é armazenado no repositório. O runner está na mesma VPC do banco, sem IP público; sua regra de entrada no RDS é exclusivamente por Security Group em TCP/1433.
 
+O job de bootstrap aguarda até dez minutos pelo registro do runner. Se ele não ficar online, o workflow falha e publica no log a saída de console da EC2 para diagnóstico.
+
 Antes do primeiro bootstrap, cadastre o secret `GH_RUNNER_ADMIN_TOKEN`: um fine-grained PAT do GitHub com permissão **Administration: write** apenas para este repositório. A API de registro de runners exige essa permissão administrativa; o `GITHUB_TOKEN` do workflow não a substitui. Esse secret não muda com o AWS Academy.
 
 Para uma nova sessão do AWS Academy, atualize apenas os secrets temporários AWS do environment `homolog` e faça um push para `main` ou use **Run workflow**. Não é necessário registrar a EC2, criar Security Groups ou copiar IDs manualmente.
