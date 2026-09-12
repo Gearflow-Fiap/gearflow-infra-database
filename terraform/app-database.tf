@@ -21,19 +21,11 @@ variable "app_db_password" {
   nullable    = true
 }
 
-variable "enable_sql_bootstrap" {
-  description = "Executa a criacao do banco e das credenciais SQL apenas quando o apply roda dentro da VPC."
-  type        = bool
-  default     = false
-}
-
 # Nem o aws_db_instance (a engine sqlserver-ex do RDS não aceita "db_name" na
 # criação, ao contrário de MySQL/Postgres) nem o provider mssql (só tem
 # mssql_login/mssql_user, sem recurso de "database") criam o banco lógico —
 # esse é o único passo imperativo aqui. Idempotente via IF DB_ID(...) IS NULL.
 resource "null_resource" "app_database" {
-  count = var.enable_sql_bootstrap ? 1 : 0
-
   triggers = {
     db_instance_id = aws_db_instance.sqlserver.id
   }
@@ -60,8 +52,6 @@ resource "null_resource" "app_database" {
 }
 
 resource "mssql_login" "app" {
-  count = var.enable_sql_bootstrap ? 1 : 0
-
   server {
     host = aws_db_instance.sqlserver.address
     port = aws_db_instance.sqlserver.port
@@ -78,8 +68,6 @@ resource "mssql_login" "app" {
 }
 
 resource "mssql_user" "app" {
-  count = var.enable_sql_bootstrap ? 1 : 0
-
   server {
     host = aws_db_instance.sqlserver.address
     port = aws_db_instance.sqlserver.port
@@ -91,7 +79,7 @@ resource "mssql_user" "app" {
 
   database   = var.database_name
   username   = "gearflow_app"
-  login_name = mssql_login.app[0].login_name
+  login_name = mssql_login.app.login_name
   roles      = ["db_owner"]
 
   depends_on = [null_resource.app_database]

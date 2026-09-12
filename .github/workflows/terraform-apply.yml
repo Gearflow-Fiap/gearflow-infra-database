@@ -27,7 +27,6 @@ jobs:
 
     env:
       TF_VAR_aws_region: ${{ vars.AWS_REGION }}
-      TF_VAR_enable_sql_bootstrap: false
       TF_VAR_runner_repository_url: ${{ github.server_url }}/${{ github.repository }}
 
     steps:
@@ -85,7 +84,6 @@ jobs:
     env:
       TF_VAR_aws_region: ${{ vars.AWS_REGION }}
       TF_VAR_app_db_password: ${{ secrets.DB_PASSWORD }}
-      TF_VAR_enable_sql_bootstrap: true
 
     steps:
       - uses: actions/checkout@v4
