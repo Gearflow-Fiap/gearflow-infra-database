@@ -158,3 +158,9 @@ variable "runner_registration_token" {
   sensitive   = true
   default     = ""
 }
+
+variable "runner_bootstrap_revision" {
+  description = "Revisao do bootstrap da EC2 runner; aumente somente para recriar o runner apos uma correcao de bootstrap."
+  type        = string
+  default     = "2"
+}
