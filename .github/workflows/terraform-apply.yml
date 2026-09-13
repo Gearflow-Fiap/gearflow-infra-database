@@ -16,8 +16,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  ensure-private-runner:
-    name: Ensure private database runner
+  apply:
+    name: Apply database infrastructure
     runs-on: ubuntu-latest
     environment: homolog
 
@@ -27,97 +27,9 @@ jobs:
 
     env:
       TF_VAR_aws_region: ${{ vars.AWS_REGION }}
-      TF_VAR_runner_repository_url: ${{ github.server_url }}/${{ github.repository }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.15.8
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - name: Create one-time runner registration token
-        id: runner-token
-        env:
-          GH_TOKEN: ${{ secrets.GH_RUNNER_ADMIN_TOKEN }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          test -n "$GH_TOKEN"
-          TOKEN=$(curl --fail-with-body --silent --show-error --request POST \
-            --header "Accept: application/vnd.github+json" \
-            --header "Authorization: Bearer $GH_TOKEN" \
-            --header "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/$REPOSITORY/actions/runners/registration-token" | jq --raw-output '.token')
-          test -n "$TOKEN"
-          test "$TOKEN" != "null"
-          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
-
-      - name: Ensure VPC, RDS, and private runner
-        env:
-          TF_VAR_runner_registration_token: ${{ steps.runner-token.outputs.token }}
-        run: |
-          terraform init -input=false
-          terraform validate -no-color
-          terraform apply -input=false -auto-approve -var-file=environments/homolog.tfvars.example -target=aws_instance.database_provisioner
-
-      - name: Wait for private runner registration
-        env:
-          GH_TOKEN: ${{ secrets.GH_RUNNER_ADMIN_TOKEN }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          for attempt in {1..30}; do
-            if curl --fail-with-body --silent --show-error \
-              --header "Accept: application/vnd.github+json" \
-              --header "Authorization: Bearer $GH_TOKEN" \
-              --header "X-GitHub-Api-Version: 2022-11-28" \
-              "https://api.github.com/repos/$REPOSITORY/actions/runners" | \
-              jq --exit-status 'any(.runners[]; .status == "online" and any(.labels[]; .name == "database-vpc"))' > /dev/null; then
-              echo "Private database runner is online."
-              exit 0
-            fi
-            echo "Waiting for private runner registration ($attempt/30)..."
-            sleep 20
-          done
-
-          INSTANCE_ID=$(terraform output -raw database_provisioner_instance_id 2>/dev/null || true)
-          if [ -n "$INSTANCE_ID" ]; then
-            echo "Runner did not register. Latest EC2 console output follows:"
-            aws ec2 get-console-output --instance-id "$INSTANCE_ID" --latest --query Output --output text || true
-          fi
-          exit 1
-
-  apply:
-    name: Apply database infrastructure
-    needs: ensure-private-runner
-    # Runner Linux privado, registrado na VPC do banco.
-    runs-on: [self-hosted, linux, database-vpc]
-    # Configure required reviewers for this environment in GitHub before the
-    # first apply. This repository provisions the homologation RDS instance.
-    environment: homolog
-
-    defaults:
-      run:
-        working-directory: terraform
-
-    env:
-      TF_VAR_aws_region: ${{ vars.AWS_REGION }}
-      TF_VAR_app_db_password: ${{ secrets.DB_PASSWORD }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Verify private runner prerequisites
-        run: |
-          command -v sqlcmd
-          command -v aws
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
@@ -153,7 +65,7 @@ jobs:
           DB_STATUS=$(aws rds describe-db-instances --db-instance-identifier "$DB_IDENTIFIER" --query 'DBInstances[0].DBInstanceStatus' --output text)
           PUBLIC=$(aws rds describe-db-instances --db-instance-identifier "$DB_IDENTIFIER" --query 'DBInstances[0].PubliclyAccessible' --output text)
           [ "$DB_STATUS" = "available" ]
-          [ "$PUBLIC" = "False" ]
+          [ "$PUBLIC" = "True" ]
           {
             echo "## Deploy do banco concluído"
             echo "- Instância: \`$DB_IDENTIFIER\`"

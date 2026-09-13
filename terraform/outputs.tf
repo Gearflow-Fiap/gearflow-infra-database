@@ -40,18 +40,3 @@ output "database_security_group_id" {
   description = "ID do security group do banco para autorizações futuras."
   value       = aws_security_group.database.id
 }
-
-output "database_provisioner_security_group_id" {
-  description = "Security Group do runner privado que executa o bootstrap SQL."
-  value       = aws_security_group.database_provisioner.id
-}
-
-output "database_provisioner_instance_id" {
-  description = "ID da EC2 privada registrada como runner GitHub Actions."
-  value       = aws_instance.database_provisioner.id
-}
-
-output "database_private_subnet_ids" {
-  description = "IDs das subnets privadas do RDS. A Lambda check-client (gearflow-lambda) deve usar essas mesmas subnets em vpc_config para alcançar o banco pela rede privada."
-  value       = aws_subnet.database_private[*].id
-}
