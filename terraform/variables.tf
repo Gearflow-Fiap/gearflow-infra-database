@@ -118,9 +118,9 @@ variable "database_name" {
 }
 
 variable "secret_recovery_window_in_days" {
-  description = "Período de recuperação do segredo de metadados após sua exclusão."
+  description = "Período de recuperação do segredo de metadados após sua exclusão; 0 o remove imediatamente, adequado ao AWS Academy Lab."
   type        = number
-  default     = 7
+  default     = 0
 }
 
 variable "allowed_cidr_blocks" {

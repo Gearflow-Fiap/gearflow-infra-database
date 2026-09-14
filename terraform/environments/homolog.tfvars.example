@@ -12,7 +12,9 @@ multi_az                       = false
 backup_retention_days          = 7
 deletion_protection            = false
 skip_final_snapshot            = true
-secret_recovery_window_in_days = 7
+# No AWS Academy Lab, liberar o nome imediatamente após destroy evita que uma
+# nova execução fique bloqueada pelo período de recuperação do Secrets Manager.
+secret_recovery_window_in_days = 0
 
 # Lab: libera acesso público na porta 1433 (não usar em produção)
 allowed_cidr_blocks        = ["0.0.0.0/0"]
